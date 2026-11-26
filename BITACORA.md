@@ -16,4 +16,11 @@ Diario de sesiones, de la más antigua a la más reciente. Aquí también quedan
 - Decidí empezar de nuevo con otra forma de estudiar. Los motivos están en [docs/decisiones/0001-metodologia-v2.md](docs/decisiones/0001-metodologia-v2.md).
 - Rehíce este repositorio desde cero para que el historial siga el orden real de aprendizaje.
 - Pedí que los laboratorios se expliquen solos. Ahora cada contenedor tiene un nombre descriptivo (`lab11-<rol>-<qué-pasa>`), etiquetas con su descripción, una ficha en el README y un script `info.sh` que muestra rol, IP, puerto, red y volúmenes.
-- Siguiente paso: micro-lección 1, "Qué es una red".
+
+## 2026-11-26: micro-lección 1, qué es una red
+
+- Primera micro-lección con el método nuevo: ejemplo resuelto, predicción, práctica con huecos y caso solo.
+- Aprendí a listar los contenedores de un laboratorio con un filtro por etiqueta, y la diferencia entre `docker ps` y `docker ps -a`.
+- Entendí que cada contenedor tiene nombre de servicio (`web`) y nombre de contenedor (`lab11-web-sano`).
+- Acerté la predicción y resolví solo el caso de apagar y encender la API.
+- Siguiente paso: micro-lección 2, "La dirección IP".

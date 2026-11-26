@@ -8,7 +8,7 @@ Laboratorio: [lab-1-1](laboratorios/lab-1-1/).
 
 | # | Micro-lección | La idea en una línea | Estado |
 |---|---|---|---|
-| 1 | Qué es una red | Máquinas conectadas que se mandan mensajes | Pendiente |
+| 1 | [Qué es una red](modulo-01-redes/01-que-es-una-red/) | Máquinas conectadas que se mandan mensajes | Terminada (2026-11-26) |
 | 2 | La dirección IP | El número para encontrar una máquina | Pendiente |
 | 3 | El puerto | A qué programa de la máquina va el mensaje | Pendiente |
 | 4 | El nombre y el DNS | Los nombres se traducen a IP | Pendiente |
