@@ -1,0 +1,49 @@
+# Secretos y credenciales: nunca deben entrar al repositorio
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.kdbx
+id_rsa*
+id_ed25519*
+id_ecdsa*
+id_dsa*
+!*.pub
+.git-credentials
+.netrc
+.docker/config.json
+.aws/
+credentials
+kubeconfig*
+*.kubeconfig
+.ssh/
+
+# Infraestructura como código: el estado y las variables pueden contener secretos
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+.terraform/
+crash.log
+
+# Capturas y registros: pueden contener datos personales. Si son seguros, se añaden con git add -f tras revisarlos
+*.pcap
+*.pcapng
+*.log
+*.bak
+*.dump
+*.sql
+
+# Entorno local
+.vscode/
+.idea/
+.history/
+.DS_Store
+Thumbs.db
+__pycache__/
+*.pyc
+node_modules/
+venv/
+.venv/
