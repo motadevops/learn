@@ -1,0 +1,110 @@
+# Laboratorio 1.1: el servicio que no responde
+#
+# Convencion de nombres (igual en todos los laboratorios):
+#   lab11-<rol>-<que-pasa>
+#   lab11       = laboratorio 1.1
+#   <rol>       = para que sirve la maquina (cliente, web, api, firewall)
+#   <que-pasa>  = como se comporta en este laboratorio
+#
+# Asi, al hacer "docker ps", cada nombre se explica solo.
+#
+#   Contenedor              IP            Puerto  Que hace
+#   lab11-cliente-pruebas   172.21.0.5    -       Desde aqui haces las pruebas
+#   lab11-web-sano          172.21.0.10   80      Servidor web que funciona bien
+#   lab11-api-solo-local    172.21.0.20   8080    Falla: solo escucha dentro de si mismo
+#   lab11-web-bloqueado     172.21.0.30   9090    Falla: un firewall descarta los paquetes
+#   (nadie)                 172.21.0.99   -       Direccion sin dueño
+#   (gateway de Docker)     172.21.0.1    -       Puerta de salida de la red
+#
+# Las etiquetas "academia.*" de cada contenedor guardan esta misma informacion
+# dentro de Docker. El script info.sh las muestra en una tabla.
+#
+# Volumenes: ninguno. Ningun contenedor guarda datos; se pueden borrar y
+# volver a crear sin perder nada.
+
+name: lab11
+
+x-base: &base
+  build: .
+  image: lab11-herramientas:1
+  restart: "no"
+
+services:
+
+  # Nombre de servicio corto ("client"): es el que usas en "docker compose exec".
+  # Nombre de contenedor largo: es el que ves en "docker ps".
+  client:
+    <<: *base
+    container_name: lab11-cliente-pruebas
+    hostname: lab11-cliente-pruebas
+    command: ["sleep", "infinity"]
+    labels:
+      academia.lab: "1.1"
+      academia.rol: "cliente"
+      academia.descripcion: "Maquina desde la que haces todas las pruebas. No ofrece ningun servicio."
+      academia.puerto: "ninguno"
+      academia.estado-esperado: "sano"
+    networks:
+      red-lab:
+        ipv4_address: 172.21.0.5
+
+  web:
+    <<: *base
+    container_name: lab11-web-sano
+    hostname: lab11-web-sano
+    command: ["python3", "-m", "http.server", "80", "--bind", "0.0.0.0", "--directory", "/srv"]
+    labels:
+      academia.lab: "1.1"
+      academia.rol: "servidor web"
+      academia.descripcion: "Servidor web que funciona bien. Sirve de comparacion."
+      academia.puerto: "80/tcp"
+      academia.estado-esperado: "sano"
+    networks:
+      red-lab:
+        ipv4_address: 172.21.0.10
+
+  api:
+    <<: *base
+    container_name: lab11-api-solo-local
+    hostname: lab11-api-solo-local
+    # FALLA A PROPOSITO: escucha solo en 127.0.0.1, es decir, solo dentro de si mismo.
+    command: ["python3", "-m", "http.server", "8080", "--bind", "127.0.0.1", "--directory", "/srv"]
+    labels:
+      academia.lab: "1.1"
+      academia.rol: "api"
+      academia.descripcion: "Servidor que escucha solo en 127.0.0.1. Desde otra maquina da Connection refused."
+      academia.puerto: "8080/tcp"
+      academia.estado-esperado: "falla a proposito"
+    networks:
+      red-lab:
+        ipv4_address: 172.21.0.20
+
+  fw:
+    <<: *base
+    container_name: lab11-web-bloqueado
+    hostname: lab11-web-bloqueado
+    entrypoint: ["/usr/local/bin/entrypoint-fw.sh"]
+    # Permiso extra para que este contenedor pueda crear su propia regla de firewall.
+    cap_add:
+      - NET_ADMIN
+    labels:
+      academia.lab: "1.1"
+      academia.rol: "servidor web con firewall"
+      academia.descripcion: "Servidor que funciona, pero un firewall descarta en silencio lo que llega al puerto 9090. Da timed out."
+      academia.puerto: "9090/tcp"
+      academia.estado-esperado: "falla a proposito"
+    networks:
+      red-lab:
+        ipv4_address: 172.21.0.30
+
+networks:
+  red-lab:
+    name: lab11-red
+    driver: bridge
+    labels:
+      academia.lab: "1.1"
+      academia.descripcion: "Red privada del laboratorio 1.1, separada de cualquier otro proyecto."
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+          gateway: 172.21.0.1

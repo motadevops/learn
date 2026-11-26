@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratorio 1.1 El servicio que no responde</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Diseño: guía de laboratorio en columna única; cada paso es una ficha con qué, por qué y qué pasaría si no */
+  --bg:#f4f6f9; --surface:#ffffff; --ink:#18212f; --muted:#556275; --line:#d9dfe8;
+  --accent:#2457d6; --accent-soft:#e4ecfd;
+  --ok-bg:#dcf3e3; --ok-ink:#17663a;
+  --bad-bg:#fbe1e1; --bad-ink:#9b2323;
+  --warn-bg:#fcefc9; --warn-ink:#7a5200;
+  --code-bg:#0f1722; --code-ink:#e4eaf3; --code-bar:#1a2432;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10151d; --surface:#18202b; --ink:#e6ebf2; --muted:#9aa7b8; --line:#2a3544;
+    --accent:#7ba2ff; --accent-soft:#1f2f55;
+    --ok-bg:#16361f; --ok-ink:#8fdba8; --bad-bg:#431c1c; --bad-ink:#f4aaaa; --warn-bg:#40320f; --warn-ink:#f0d27c;
+    --code-bg:#0a0f16; --code-ink:#e4eaf3; --code-bar:#161e2a;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10151d; --surface:#18202b; --ink:#e6ebf2; --muted:#9aa7b8; --line:#2a3544;
+  --accent:#7ba2ff; --accent-soft:#1f2f55;
+  --ok-bg:#16361f; --ok-ink:#8fdba8; --bad-bg:#431c1c; --bad-ink:#f4aaaa; --warn-bg:#40320f; --warn-ink:#f0d27c;
+  --code-bg:#0a0f16; --code-ink:#e4eaf3; --code-bar:#161e2a;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.7}
+.wrap{max-width:800px;margin:0 auto;padding:0 20px 90px}
+header.top{padding:36px 0 8px}
+header.top .k{margin:0;font-family:var(--font-mono);font-size:13px;color:var(--muted)}
+h1{font-size:34px;line-height:1.15;margin:6px 0 10px;font-weight:600;text-wrap:balance}
+h2{font-size:25px;line-height:1.25;margin:0 0 8px;font-weight:600;text-wrap:balance}
+h3{font-size:18px;margin:22px 0 4px;font-weight:600}
+p{margin:0 0 14px;max-width:70ch}
+.lead{color:var(--muted);max-width:62ch}
+.cap{font-size:14px;color:var(--muted);margin:0 0 8px}
+nav.idx{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 20px;margin:0 -20px 24px;display:flex;gap:8px;overflow-x:auto;align-items:center}
+nav.idx a{white-space:nowrap;font-size:14px;color:var(--ink);text-decoration:none;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+nav.idx a:hover{border-color:var(--accent);color:var(--accent)}
+nav.idx .prog{margin-left:auto;white-space:nowrap;font-size:13px;color:var(--muted);font-family:var(--font-mono)}
+a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.sec{padding-top:34px}
+.tag{display:inline-block;font-family:var(--font-mono);font-size:12px;padding:2px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent);margin-bottom:8px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0}
+code{font-family:var(--font-mono);font-size:.88em;background:var(--accent-soft);color:var(--ink);padding:1px 6px;border-radius:5px}
+.code{border-radius:10px;overflow:hidden;margin:10px 0 14px;border:1px solid var(--line)}
+.cbar{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--code-bar);padding:6px 10px}
+.cbar .where{font-size:12px;color:#9fb0c6;font-family:var(--font-mono)}
+.cbar button{margin-left:auto;font:inherit;font-size:12px;padding:3px 10px;border-radius:6px;border:1px solid #33445a;background:transparent;color:#c9d6e8;cursor:pointer}
+.cbar button:hover{border-color:#7ba2ff;color:#fff}
+pre{margin:0;padding:12px 14px;background:var(--code-bg);color:var(--code-ink);overflow-x:auto;font-size:14px;line-height:1.55}
+pre code{background:none;color:inherit;padding:0;font-size:inherit}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 18px 12px;margin:20px 0}
+.shead{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.shead h3{margin:0;font-size:19px}
+.num{flex:none;width:32px;height:32px;border-radius:50%;background:var(--accent);color:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:10px}
+.trio>div{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:15px}
+.trio b{display:block;font-size:12px;letter-spacing:.02em;color:var(--muted);margin-bottom:2px;font-weight:600}
+.trio p{margin:0;font-size:15px;line-height:1.55}
+.predict{background:var(--warn-bg);color:var(--warn-ink);border-radius:10px;padding:10px 14px;margin:10px 0}
+.predict b,.obs b,.alt b{display:block;font-size:13px;font-weight:600;margin-bottom:2px}
+.predict p{margin:0;font-size:15px}
+.obs{background:var(--ok-bg);color:var(--ok-ink);border-radius:10px;padding:10px 14px;margin:10px 0}
+.obs p{font-size:15px;margin:0 0 8px}.obs p:last-child{margin:0}
+.obs code,.predict code,.alt code{background:rgba(0,0,0,.08);color:inherit}
+.alt{border:1px dashed var(--line);border-radius:10px;padding:10px 14px;margin:10px 0;color:var(--muted)}
+.alt p{font-size:15px;margin:0}
+label.done{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--muted);margin-top:8px;cursor:pointer}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:10px 0 16px}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--accent-soft);font-weight:600}
+.tw{overflow-x:auto}
+details{border:1px solid var(--line);border-radius:10px;background:var(--surface);margin:8px 0}
+summary{cursor:pointer;padding:12px 16px;font-weight:500;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";display:inline-block;width:18px;color:var(--accent);font-family:var(--font-mono)}
+details[open] summary::before{content:"-"}
+details .ans{padding:0 16px 14px 34px;font-size:16px}
+ul{margin:0 0 14px;padding-left:22px;max-width:70ch}
+li{margin:4px 0}
+.warnbox{background:var(--bad-bg);color:var(--bad-ink);border-radius:10px;padding:12px 14px;margin:12px 0;font-size:15px}
+.warnbox code{background:rgba(0,0,0,.08);color:inherit}
+svg text{font-family:var(--font-body)}
+footer{margin-top:50px;font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+@media (max-width:640px){
+  body{font-size:16px}h1{font-size:28px}
+  .trio{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <p class="k">Academia DevOps / Módulo 1 / Lección 1.1</p>
+  <h1>Laboratorio 1.1: el servicio que no responde</h1>
+  <p class="lead">Un entorno real con cuatro máquinas que fallan de formas distintas. Con tus propias herramientas vas a distinguir un rechazo, un silencio, un camino roto y un error de aplicación, y vas a comprobar con una captura de red todo lo que vimos en teoría.</p>
+</header>
+
+<nav class="idx" aria-label="Índice">
+  <a href="#objetivo">Objetivo</a>
+  <a href="#arquitectura">Arquitectura</a>
+  <a href="#requisitos">Requisitos</a>
+  <a href="#archivos">Archivos</a>
+  <a href="#pasos">Paso a paso</a>
+  <a href="#pruebas">Pruebas</a>
+  <a href="#errores">Errores</a>
+  <a href="#limpieza">Limpieza</a>
+  <a href="#ejercicio">Ejercicio</a>
+  <span class="prog" id="prog" aria-live="polite"></span>
+</nav>
+
+<section class="sec" id="objetivo">
+  <span class="tag">1. Objetivo</span>
+  <h2>Qué vas a lograr</h2>
+  <p>Al terminar, vas a poder hacer cuatro cosas con evidencia propia: leer una tabla de rutas y una tabla ARP de un sistema real, demostrar con una captura de tráfico que la MAC destino de un paquete es la del gateway, distinguir <code>refused</code>, <code>timed out</code> y <code>no route to host</code> por su causa real, y encontrar y corregir un servicio que está sano pero inaccesible.</p>
+  <p><b>Tiempo estimado:</b> entre una hora y media y dos horas, sin contar el ejercicio individual. <b>Es seguro:</b> no hay comandos destructivos. Todo ocurre dentro de una red aislada de Docker.</p>
+  <p class="cap">Importante: yo preparé y validé la sintaxis de los archivos, pero no los ejecuté en tu máquina. Todo lo que yo describa en "Qué debes observar" es lo que debería ocurrir según cómo funciona el sistema. Lo que realmente veas en tu pantalla es lo que cuenta, y si no coincide, eso es información valiosa para el diagnóstico.</p>
+</section>
+
+<section class="sec" id="arquitectura">
+  <span class="tag">3. Arquitectura</span>
+  <h2>El entorno</h2>
+  <p>Una red de Docker con la dirección 172.21.0.0/24. Desde <code>client</code> vas a diagnosticar a las otras tres máquinas. Cada una falla de una manera distinta. La IP 172.21.0.99 no pertenece a nadie, a propósito.</p>
+  <div class="card">
+    <svg viewBox="0 0 680 360" width="100%" role="img" aria-label="Diagrama de la red del laboratorio: client, gateway, web, api, fw y una IP sin dueño">
+      <rect x="150" y="14" width="400" height="332" rx="12" fill="none" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="6 5"/>
+      <text x="166" y="38" font-size="13" fill="var(--muted)">Red lab11-red: 172.21.0.0/24</text>
+      <rect x="20" y="150" width="110" height="58" rx="10" fill="var(--accent-soft)" stroke="var(--accent)"/>
+      <text x="75" y="175" text-anchor="middle" font-size="15" font-weight="600" fill="var(--ink)">client</text>
+      <text x="75" y="195" text-anchor="middle" font-size="13" fill="var(--muted)">172.21.0.5</text>
+      <rect x="170" y="150" width="110" height="58" rx="10" fill="var(--surface)" stroke="var(--line)"/>
+      <text x="225" y="175" text-anchor="middle" font-size="15" font-weight="600" fill="var(--ink)">gateway</text>
+      <text x="225" y="195" text-anchor="middle" font-size="13" fill="var(--muted)">172.21.0.1</text>
+      <g font-size="15">
+        <rect x="360" y="54" width="170" height="56" rx="10" fill="var(--ok-bg)" stroke="var(--ok-ink)"/>
+        <text x="445" y="77" text-anchor="middle" font-weight="600" fill="var(--ok-ink)">web · 172.21.0.10</text>
+        <text x="445" y="98" text-anchor="middle" font-size="13" fill="var(--ok-ink)">puerto 80 · sano</text>
+        <rect x="360" y="124" width="170" height="56" rx="10" fill="var(--bad-bg)" stroke="var(--bad-ink)"/>
+        <text x="445" y="147" text-anchor="middle" font-weight="600" fill="var(--bad-ink)">api · 172.21.0.20</text>
+        <text x="445" y="168" text-anchor="middle" font-size="13" fill="var(--bad-ink)">8080 · solo localhost</text>
+        <rect x="360" y="194" width="170" height="56" rx="10" fill="var(--warn-bg)" stroke="var(--warn-ink)"/>
+        <text x="445" y="217" text-anchor="middle" font-weight="600" fill="var(--warn-ink)">fw · 172.21.0.30</text>
+        <text x="445" y="238" text-anchor="middle" font-size="13" fill="var(--warn-ink)">9090 · firewall DROP</text>
+        <rect x="360" y="264" width="170" height="56" rx="10" fill="none" stroke="var(--muted)" stroke-dasharray="5 4"/>
+        <text x="445" y="287" text-anchor="middle" font-weight="600" fill="var(--muted)">172.21.0.99</text>
+        <text x="445" y="308" text-anchor="middle" font-size="13" fill="var(--muted)">sin dueño</text>
+      </g>
+      <line x1="130" y1="179" x2="168" y2="179" stroke="var(--muted)" stroke-width="1.5"/>
+      <line x1="280" y1="179" x2="358" y2="82" stroke="var(--muted)" stroke-width="1"/>
+      <line x1="280" y1="179" x2="358" y2="152" stroke="var(--muted)" stroke-width="1"/>
+      <line x1="280" y1="179" x2="358" y2="222" stroke="var(--muted)" stroke-width="1"/>
+      <line x1="280" y1="179" x2="358" y2="292" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4 4"/>
+      <text x="75" y="232" text-anchor="middle" font-size="13" fill="var(--muted)">desde aquí diagnosticas</text>
+    </svg>
+    <p class="cap" style="margin-top:8px">Verde: sano. Rojo: rechaza (refused). Amarillo: silencio (timeout). Punteado: sin camino. El gateway es el puente que Docker crea en tu máquina.</p>
+  </div>
+  <h3>Qué falla en cada máquina y en qué escalón de la escalera</h3>
+  <div class="tw"><table>
+    <tr><th>Prueba</th><th>Escalón</th><th>Qué verás</th><th>Causa real</th></tr>
+    <tr><td>Nombre inexistente</td><td>1, DNS</td><td>Could not resolve host</td><td>El nombre no existe en el DNS de Docker</td></tr>
+    <tr><td>172.21.0.99</td><td>2, camino</td><td>No route to host</td><td>Nadie responde al ARP</td></tr>
+    <tr><td>fw, puerto 9090</td><td>4, transporte</td><td>Timeout</td><td>Un firewall descarta los paquetes en silencio</td></tr>
+    <tr><td>api, puerto 8080</td><td>4, transporte</td><td>Connection refused</td><td>Escucha solo en 127.0.0.1</td></tr>
+    <tr><td>web, ruta inexistente</td><td>5, aplicación</td><td>404</td><td>La aplicación no tiene esa página</td></tr>
+  </table></div>
+</section>
+
+<section class="sec" id="requisitos">
+  <span class="tag">4 y 7. Requisitos e instalación</span>
+  <h2>Qué necesitas</h2>
+  <ul>
+    <li>WSL2 con Debian y Docker Engine funcionando, con Docker Compose (comando <code>docker compose</code>).</li>
+    <li>Visual Studio Code, opcional pero recomendado.</li>
+    <li>Conexión a internet la primera vez, para descargar la imagen base de Debian y sus paquetes.</li>
+    <li>Unos 400 MB de espacio libre.</li>
+  </ul>
+  <p>No hay que instalar nada en tu WSL. Las herramientas de diagnóstico (<code>tcpdump</code>, <code>nc</code>, <code>dig</code>, <code>ip</code>) se instalan dentro de la imagen del laboratorio mediante el <code>Dockerfile</code>. Eso mantiene tu sistema limpio y hace que el laboratorio sea reproducible.</p>
+  <h3>Estructura de directorios</h3>
+  <div class="code"><div class="cbar"><span class="where">learn/laboratorios/lab-1-1</span><button class="cp" type="button">Copiar</button></div><pre><code>lab-1-1/
+├── Dockerfile
+├── compose.yaml
+├── README.md
+├── entrypoint-fw.sh
+├── guia-laboratorio.html
+├── info.sh
+└── verify.sh</code></pre></div>
+</section>
+
+<section class="sec" id="archivos">
+  <span class="tag">6. Archivos completos</span>
+  <h2>Los archivos</h2>
+  <p>Cópialos tal cual. Antes de hacerlo, léelos: cada comentario explica una decisión.</p>
+  <h3>Dockerfile</h3><p class="cap">Construye la imagen común: Debian con las herramientas de diagnóstico.</p><div class="code"><div class="cbar"><span class="where">Archivo: Dockerfile</span><button class="cp" type="button">Copiar</button></div><pre><code># Imagen única del laboratorio 1.1.
+# Se usa Debian porque es el sistema que ya conoces. Todos los servicios usan
+# esta misma imagen; lo que cambia es el comando con el que arrancan.
+FROM debian:bookworm-slim
+
+LABEL academia.lab="1.1" \
+      academia.descripcion="Imagen comun del laboratorio 1.1: Debian con herramientas de diagnostico de red."
+
+RUN apt-get update \
+ &amp;&amp; apt-get install -y --no-install-recommends \
+      python3 \
+      curl \
+      iproute2 \
+      iputils-ping \
+      tcpdump \
+      dnsutils \
+      netcat-openbsd \
+      iptables \
+      procps \
+      ca-certificates \
+ &amp;&amp; rm -rf /var/lib/apt/lists/*
+
+# Contenido mínimo que sirven los servidores web del laboratorio.
+RUN mkdir -p /srv \
+ &amp;&amp; echo "&lt;h1&gt;Laboratorio 1.1&lt;/h1&gt;&lt;p&gt;Si ves esto, llegaste hasta la aplicacion.&lt;/p&gt;" &gt; /srv/index.html
+
+COPY entrypoint-fw.sh /usr/local/bin/entrypoint-fw.sh
+RUN chmod +x /usr/local/bin/entrypoint-fw.sh
+
+WORKDIR /srv</code></pre></div>
+<h3>compose.yaml</h3><p class="cap">Define la red, los nombres, las etiquetas, las direcciones fijas y los cuatro servicios.</p><div class="code"><div class="cbar"><span class="where">Archivo: compose.yaml</span><button class="cp" type="button">Copiar</button></div><pre><code># Laboratorio 1.1: el servicio que no responde
+#
+# Convencion de nombres (igual en todos los laboratorios):
+#   lab11-&lt;rol&gt;-&lt;que-pasa&gt;
+#   lab11       = laboratorio 1.1
+#   &lt;rol&gt;       = para que sirve la maquina (cliente, web, api, firewall)
+#   &lt;que-pasa&gt;  = como se comporta en este laboratorio
+#
+# Asi, al hacer "docker ps", cada nombre se explica solo.
+#
+#   Contenedor              IP            Puerto  Que hace
+#   lab11-cliente-pruebas   172.21.0.5    -       Desde aqui haces las pruebas
+#   lab11-web-sano          172.21.0.10   80      Servidor web que funciona bien
+#   lab11-api-solo-local    172.21.0.20   8080    Falla: solo escucha dentro de si mismo
+#   lab11-web-bloqueado     172.21.0.30   9090    Falla: un firewall descarta los paquetes
+#   (nadie)                 172.21.0.99   -       Direccion sin dueño
+#   (gateway de Docker)     172.21.0.1    -       Puerta de salida de la red
+#
+# Las etiquetas "academia.*" de cada contenedor guardan esta misma informacion
+# dentro de Docker. El script info.sh las muestra en una tabla.
+#
+# Volumenes: ninguno. Ningun contenedor guarda datos; se pueden borrar y
+# volver a crear sin perder nada.
+
+name: lab11
+
+x-base: &amp;base
+  build: .
+  image: lab11-herramientas:1
+  restart: "no"
+
+services:
+
+  # Nombre de servicio corto ("client"): es el que usas en "docker compose exec".
+  # Nombre de contenedor largo: es el que ves en "docker ps".
+  client:
+    &lt;&lt;: *base
+    container_name: lab11-cliente-pruebas
+    hostname: lab11-cliente-pruebas
+    command: ["sleep", "infinity"]
+    labels:
+      academia.lab: "1.1"
+      academia.rol: "cliente"
+      academia.descripcion: "Maquina desde la que haces todas las pruebas. No ofrece ningun servicio."
+      academia.puerto: "ninguno"
+      academia.estado-esperado: "sano"
+    networks:
+      red-lab:
+        ipv4_address: 172.21.0.5
+
+  web:
+    &lt;&lt;: *base
+    container_name: lab11-web-sano
+    hostname: lab11-web-sano
+    command: ["python3", "-m", "http.server", "80", "--bind", "0.0.0.0", "--directory", "/srv"]
+    labels:
+      academia.lab: "1.1"
+      academia.rol: "servidor web"
+      academia.descripcion: "Servidor web que funciona bien. Sirve de comparacion."
+      academia.puerto: "80/tcp"
+      academia.estado-esperado: "sano"
+    networks:
+      red-lab:
+        ipv4_address: 172.21.0.10
+
+  api:
+    &lt;&lt;: *base
+    container_name: lab11-api-solo-local
+    hostname: lab11-api-solo-local
+    # FALLA A PROPOSITO: escucha solo en 127.0.0.1, es decir, solo dentro de si mismo.
+    command: ["python3", "-m", "http.server", "8080", "--bind", "127.0.0.1", "--directory", "/srv"]
+    labels:
+      academia.lab: "1.1"
+      academia.rol: "api"
+      academia.descripcion: "Servidor que escucha solo en 127.0.0.1. Desde otra maquina da Connection refused."
+      academia.puerto: "8080/tcp"
+      academia.estado-esperado: "falla a proposito"
+    networks:
+      red-lab:
+        ipv4_address: 172.21.0.20
+
+  fw:
+    &lt;&lt;: *base
+    container_name: lab11-web-bloqueado
+    hostname: lab11-web-bloqueado
+    entrypoint: ["/usr/local/bin/entrypoint-fw.sh"]
+    # Permiso extra para que este contenedor pueda crear su propia regla de firewall.
+    cap_add:
+      - NET_ADMIN
+    labels:
+      academia.lab: "1.1"
+      academia.rol: "servidor web con firewall"
+      academia.descripcion: "Servidor que funciona, pero un firewall descarta en silencio lo que llega al puerto 9090. Da timed out."
+      academia.puerto: "9090/tcp"
+      academia.estado-esperado: "falla a proposito"
+    networks:
+      red-lab:
+        ipv4_address: 172.21.0.30
+
+networks:
+  red-lab:
+    name: lab11-red
+    driver: bridge
+    labels:
+      academia.lab: "1.1"
+      academia.descripcion: "Red privada del laboratorio 1.1, separada de cualquier otro proyecto."
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+          gateway: 172.21.0.1</code></pre></div>
+<h3>entrypoint-fw.sh</h3><p class="cap">Instala el firewall que descarta paquetes y arranca el servidor de fw.</p><div class="code"><div class="cbar"><span class="where">Archivo: entrypoint-fw.sh</span><button class="cp" type="button">Copiar</button></div><pre><code>#!/bin/sh
+# Arranque del servicio "fw".
+# Primero instala una regla de firewall que DESCARTA en silencio los paquetes TCP
+# que llegan al puerto 9090, y despues arranca un servidor web en ese puerto.
+# Resultado: el servicio esta vivo y escuchando, pero desde fuera nadie le llega.
+# Es el origen de un "connection timed out".
+set -e
+
+PORT=9090
+
+if iptables -A INPUT -p tcp --dport "$PORT" -j DROP 2&gt;/dev/null; then
+  echo "[fw] regla DROP instalada para el puerto $PORT (iptables)"
+elif command -v iptables-legacy &gt;/dev/null 2&gt;&amp;1 \
+     &amp;&amp; iptables-legacy -A INPUT -p tcp --dport "$PORT" -j DROP 2&gt;/dev/null; then
+  echo "[fw] regla DROP instalada para el puerto $PORT (iptables-legacy)"
+else
+  echo "[fw] ERROR: no se pudo instalar la regla de firewall." &gt;&amp;2
+  echo "[fw] El kernel o los permisos del contenedor no lo permiten." &gt;&amp;2
+  exit 1
+fi
+
+exec python3 -m http.server "$PORT" --bind 0.0.0.0 --directory /srv</code></pre></div>
+<h3>info.sh</h3><p class="cap">Muestra en una tabla los contenedores, su rol, IP, puerto, red y volúmenes. Solo lee.</p><div class="code"><div class="cbar"><span class="where">Archivo: info.sh</span><button class="cp" type="button">Copiar</button></div><pre><code>#!/usr/bin/env bash
+# Muestra en una tabla todo lo que hay en el laboratorio 1.1:
+# contenedores, para que sirve cada uno, su IP, su puerto, su red y sus volumenes.
+# Solo lee informacion de Docker. No cambia nada.
+#
+#   bash info.sh
+
+set -u
+
+LAB="1.1"
+
+echo "== Laboratorio $LAB: contenedores =="
+echo
+
+fmt="%-24s %-12s %-14s %-9s %-10s %-9s %s\n"
+printf "$fmt" "CONTENEDOR" "ESTADO" "IP" "PUERTO" "RED" "VOLUMENES" "ROL"
+printf "$fmt" "----------" "------" "--" "------" "---" "---------" "---"
+
+ids=$(docker ps -a -q --filter "label=academia.lab=$LAB")
+if [ -z "$ids" ]; then
+  echo "(no hay contenedores; levanta el laboratorio con: docker compose up -d --build)"
+else
+  for id in $ids; do
+    docker inspect --format \
+'{{.Name}}|{{.State.Status}}|{{range $red, $cfg := .NetworkSettings.Networks}}{{$cfg.IPAddress}}|{{$red}}{{end}}|{{index .Config.Labels "academia.puerto"}}|{{len .Mounts}}|{{index .Config.Labels "academia.rol"}}' "$id" |
+    while IFS='|' read -r nombre estado ip red puerto vol rol; do
+      [ "$vol" = "0" ] &amp;&amp; vol="ninguno"
+      printf "$fmt" "${nombre#/}" "$estado" "$ip" "$puerto" "$red" "$vol" "$rol"
+    done
+  done | sort
+fi
+
+echo
+echo "== Que hace cada contenedor =="
+echo
+for id in $ids; do
+  docker inspect --format \
+'{{.Name}}|{{index .Config.Labels "academia.estado-esperado"}}|{{index .Config.Labels "academia.descripcion"}}' "$id" |
+  while IFS='|' read -r nombre esperado desc; do
+    echo "${nombre#/} ($esperado)"
+    echo "    $desc"
+  done
+done
+
+echo
+echo "== Red =="
+echo
+docker network inspect lab11-red --format \
+'Nombre: {{.Name}}
+Tipo:   {{.Driver}}
+Subred: {{range .IPAM.Config}}{{.Subnet}}{{end}}
+Gateway: {{range .IPAM.Config}}{{.Gateway}}{{end}}
+Que es: {{index .Labels "academia.descripcion"}}' 2&gt;/dev/null \
+  || echo "(la red lab11-red no existe todavia)"</code></pre></div>
+<h3>verify.sh</h3><p class="cap">Comprueba automáticamente todos los resultados del laboratorio.</p><div class="code"><div class="cbar"><span class="where">Archivo: verify.sh</span><button class="cp" type="button">Copiar</button></div><pre><code>#!/usr/bin/env bash
+# Verificacion automatica del laboratorio 1.1.
+# Ejecutalo desde la carpeta del laboratorio, con el entorno levantado:
+#
+#   bash verify.sh            estado inicial (la api falla a proposito)
+#   bash verify.sh --fixed    despues de arreglar la api
+#
+# Cada prueba lanza un comando desde el contenedor "client" y comprueba que el
+# resultado contenga lo esperado.
+#
+# Para distinguir "refused", "timed out" y "no route" se usa nc (netcat), porque
+# imprime el mensaje exacto del sistema operativo. El texto de errores de curl
+# cambia segun su version, asi que curl solo se usa donde su salida es estable
+# (codigos HTTP y resolucion de nombres).
+
+set -u
+
+MODE="${1:-initial}"
+OK=0
+FAIL=0
+
+check() {
+  # check "nombre" "patron esperado" comando...
+  local name="$1" pattern="$2"
+  shift 2
+  local out
+  out="$("$@" 2&gt;&amp;1 || true)"
+  if printf '%s' "$out" | grep -Eqi -- "$pattern"; then
+    echo "[OK]    $name"
+    OK=$((OK + 1))
+  else
+    echo "[FALLO] $name"
+    echo "        esperado (patron): $pattern"
+    echo "        obtenido: $(printf '%s' "$out" | head -n 3 | tr '\n' ' ')"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+cl() { docker compose exec -T client "$@"; }
+
+echo "== Modo: $MODE =="
+echo
+
+check "Escalon 1 ok: el nombre 'web' se resuelve y la web responde 200" \
+  '^200$' \
+  cl curl -sS -m 5 -o /dev/null -w '%{http_code}' http://web/
+
+check "Escalon 1 falla: un nombre inexistente no se resuelve" \
+  'Could not resolve host' \
+  cl curl -sS -m 5 http://inexistente.lab/
+
+check "Escalon 2 falla: la IP 172.21.0.99 no tiene camino (nadie responde al ARP)" \
+  'No route to host|Host is unreachable' \
+  cl nc -vz -w 10 172.21.0.99 80
+
+check "Escalon 4 falla en silencio: fw descarta paquetes (timeout)" \
+  'timed out' \
+  cl nc -vz -w 4 172.21.0.30 9090
+
+if [ "$MODE" = "--fixed" ]; then
+  check "Escalon 4 ok: la api acepta conexiones en el puerto 8080" \
+    'succeeded' \
+    cl nc -vz -w 4 172.21.0.20 8080
+  check "Escalon 5 ok: la api responde 200" \
+    '^200$' \
+    cl curl -sS -m 5 -o /dev/null -w '%{http_code}' http://172.21.0.20:8080/
+  check "La api ya escucha en todas las interfaces (0.0.0.0:8080)" \
+    '0\.0\.0\.0:8080|\*:8080' \
+    docker compose exec -T api ss -ltn
+else
+  check "Escalon 4 falla con rechazo: la api responde 'refused'" \
+    'refused' \
+    cl nc -vz -w 4 172.21.0.20 8080
+  check "La api escucha solo en 127.0.0.1:8080" \
+    '127\.0\.0\.1:8080' \
+    docker compose exec -T api ss -ltn
+fi
+
+check "Escalon 5: la aplicacion contesta 404 a una ruta que no existe" \
+  '^404$' \
+  cl curl -sS -m 5 -o /dev/null -w '%{http_code}' http://web/noexiste
+
+echo
+echo "Resultado: $OK correctas, $FAIL con fallo."
+[ "$FAIL" -eq 0 ]</code></pre></div>
+</section>
+
+<section class="sec" id="pasos">
+  <span class="tag">8. Implementación paso a paso</span>
+  <h2>Paso a paso</h2>
+  <p>Cada paso tiene tres partes: qué hacemos, por qué lo hacemos y qué pasaría si no lo hiciéramos. Cuando veas un recuadro amarillo, para y escribe tu predicción antes de ejecutar. Equivocarte en una predicción enseña más que acertar a la primera.</p>
+  <p>Usarás dos terminales. La <b>Terminal 1</b> es una shell dentro del contenedor <code>client</code>. La <b>Terminal 2</b> es otra ventana de WSL en la carpeta del laboratorio, desde la que lanzarás capturas y verás las otras máquinas.</p>
+  <article class="step" id="p1">
+<div class="shead"><span class="num">1</span><h3>Comprobar que tu entorno está listo</h3></div>
+<div class="trio"><div><b>Qué hacemos</b><p>Verificamos que Docker, Compose y el servicio de Docker funcionan.</p></div><div><b>Por qué</b><p>Todo el laboratorio depende de que el servicio de Docker esté en marcha. Es mejor descubrirlo ahora que a mitad de un paso.</p></div><div><b>Si no lo hiciéramos</b><p>Un fallo de Docker aparecería más tarde con mensajes confusos, y pensarías que el error es del laboratorio.</p></div></div>
+<div class="code"><div class="cbar"><span class="where">WSL, cualquier carpeta</span><button class="cp" type="button">Copiar</button></div><pre><code>docker --version
+docker compose version
+docker ps</code></pre></div>
+<div class="obs"><b>Qué debes observar</b><p>Las dos primeras imprimen versiones. <code>docker ps</code> imprime una cabecera, aunque no haya contenedores. Si ves "Cannot connect to the Docker daemon" o "permission denied", ve a la sección de diagnóstico de errores antes de seguir.</p></div>
+<label class="done"><input type="checkbox" data-step="1"> Hecho y entendido</label>
+</article>
+<article class="step" id="p2">
+<div class="shead"><span class="num">2</span><h3>Ir a la carpeta del laboratorio</h3></div>
+<div class="trio"><div><b>Qué hacemos</b><p>Nos situamos en la carpeta <code>laboratorios/lab-1-1</code> de tu repositorio <code>learn</code>, donde están los archivos del laboratorio.</p></div><div><b>Por qué</b><p>Todos los comandos de Compose se ejecutan desde la carpeta que tiene el <code>compose.yaml</code>.</p></div><div><b>Si no lo hiciéramos</b><p>Docker Compose busca <code>compose.yaml</code> en la carpeta actual. Desde otra carpeta no encuentra el proyecto.</p></div></div>
+<p>Cambia <code>RUTA_DEL_REPOSITORIO</code> por la carpeta donde tienes <code>learn</code>.</p>
+<div class="code"><div class="cbar"><span class="where">WSL, carpeta laboratorios/lab-1-1 del repositorio</span><button class="cp" type="button">Copiar</button></div><pre><code>cd RUTA_DEL_REPOSITORIO/learn/laboratorios/lab-1-1
+ls -l</code></pre></div>
+<div class="obs"><b>Qué debes observar</b><p><code>ls -l</code> muestra el <code>Dockerfile</code>, el <code>compose.yaml</code>, los scripts <code>entrypoint-fw.sh</code>, <code>info.sh</code> y <code>verify.sh</code>, el README y esta guía.</p></div>
+<label class="done"><input type="checkbox" data-step="2"> Hecho y entendido</label>
+</article>
+<article class="step" id="p3">
+<div class="shead"><span class="num">3</span><h3>Validar el compose antes de ejecutarlo</h3></div>
+<div class="trio"><div><b>Qué hacemos</b><p>Pedimos a Compose que lea el archivo y compruebe que es válido, sin arrancar nada.</p></div><div><b>Por qué</b><p>Es un hábito profesional: validar antes de desplegar. Un error de sangría en YAML se detecta en un segundo.</p></div><div><b>Si no lo hiciéramos</b><p>El error aparecería a mitad del despliegue, con el entorno a medias.</p></div></div>
+<div class="code"><div class="cbar"><span class="where">WSL, carpeta laboratorios/lab-1-1 del repositorio</span><button class="cp" type="button">Copiar</button></div><pre><code>docker compose config -q</code></pre></div>
+<div class="obs"><b>Qué debes observar</b><p>Si el archivo es válido, no imprime nada. Si hay un error, indica la línea.</p></div>
+<label class="done"><input type="checkbox" data-step="3"> Hecho y entendido</label>
+</article>
+<article class="step" id="p4">
+<div class="shead"><span class="num">4</span><h3>Construir la imagen y levantar el entorno</h3></div>
+<div class="trio"><div><b>Qué hacemos</b><p>Construimos una imagen Debian con las herramientas y arrancamos cuatro contenedores: client, web, api y fw.</p></div><div><b>Por qué</b><p><code>--build</code> crea la imagen la primera vez. <code>-d</code> deja todo en segundo plano para que puedas seguir usando la terminal.</p></div><div><b>Si no lo hiciéramos</b><p>Sin <code>-d</code>, la terminal quedaría ocupada mostrando logs. Sin <code>--build</code>, Compose no construiría la imagen la primera vez.</p></div></div>
+<div class="code"><div class="cbar"><span class="where">WSL, carpeta laboratorios/lab-1-1 del repositorio</span><button class="cp" type="button">Copiar</button></div><pre><code>docker compose up -d --build
+docker compose ps</code></pre></div>
+<div class="obs"><b>Qué debes observar</b><p>La construcción tarda unos minutos la primera vez porque descarga Debian e instala paquetes. Al final, <code>docker compose ps</code> lista cuatro contenedores con nombres que se explican solos: <code>lab11-cliente-pruebas</code>, <code>lab11-web-sano</code>, <code>lab11-api-solo-local</code> y <code>lab11-web-bloqueado</code>. Los cuatro deben estar en marcha (<code>Up</code>). Si <code>lab11-web-bloqueado</code> aparece como salido (exited), mira sus logs con <code>docker compose logs fw</code> y consulta el diagnóstico.</p></div>
+<div class="alt"><b>Por qué esto y no otra cosa</b><p><b>Una red propia en vez de la red por defecto:</b> en una red definida por ti, Docker ofrece resolución de nombres entre contenedores y permite fijar IP. En la red por defecto no hay resolución por nombre. <b>Una sola imagen para todo:</b> reduce piezas y hace el laboratorio más rápido. <b>Servidores web de Python en vez de nginx:</b> para TCP el comportamiento es el mismo, y evita aprender una configuración extra que aquí no aporta.</p></div>
+<label class="done"><input type="checkbox" data-step="4"> Hecho y entendido</label>
+</article>
+<article class="step" id="p5">
+<div class="shead"><span class="num">5</span><h3>Leer el entorno: quién es quién</h3></div>
+<div class="trio"><div><b>Qué hacemos</b><p>Antes de probar nada, miramos qué contenedores hay, para qué sirve cada uno, en qué red están, qué IP y puerto tienen y si guardan datos en volúmenes.</p></div><div><b>Por qué</b><p>En el trabajo, lo primero ante un entorno desconocido es inventariarlo. Por eso cada contenedor lleva un nombre que se explica solo y etiquetas con su descripción.</p></div><div><b>Si no lo hiciéramos</b><p>Sin este inventario tendrías que adivinar qué es cada contenedor por su nombre o abrir el compose a cada momento.</p></div></div>
+<div class="predict"><b>Antes de ejecutar, predice</b><p>¿Cuántos contenedores tendrán volúmenes? Pista: piensa si alguno guarda datos.</p></div>
+<p>Primero, la vista que verás en cualquier servidor: <code>docker ps</code> filtrado por la etiqueta de este laboratorio y con columnas elegidas.</p>
+<div class="code"><div class="cbar"><span class="where">WSL, carpeta laboratorios/lab-1-1 del repositorio</span><button class="cp" type="button">Copiar</button></div><pre><code>docker ps --filter "label=academia.lab=1.1" --format "table {{.Names}}\t{{.Status}}\t{{.Networks}}"</code></pre></div>
+<p>Después, la tabla completa con el script del laboratorio. Solo lee, no cambia nada.</p>
+<div class="code"><div class="cbar"><span class="where">WSL, carpeta laboratorios/lab-1-1 del repositorio</span><button class="cp" type="button">Copiar</button></div><pre><code>bash info.sh</code></pre></div>
+<p>Si quieres ver toda la configuración de un contenedor, con sus etiquetas, red, capacidades y comando:</p>
+<div class="code"><div class="cbar"><span class="where">WSL, carpeta laboratorios/lab-1-1 del repositorio</span><button class="cp" type="button">Copiar</button></div><pre><code>docker inspect lab11-api-solo-local</code></pre></div>
+<div class="obs"><b>Qué debes observar</b><p>Cuatro contenedores, todos en la red <code>lab11-red</code> (172.21.0.0/24). La columna VOLUMENES dice <code>ninguno</code> en todos: ninguno guarda datos, así que se pueden borrar y recrear sin perder nada. La sección "Qué hace cada contenedor" lee las etiquetas <code>academia.descripcion</code> que están en el <code>compose.yaml</code>.</p></div>
+<div class="alt"><b>Por qué esto y no otra cosa</b><p><b>Nombre de servicio corto y nombre de contenedor largo:</b> el corto (<code>client</code>, <code>api</code>) es cómodo para escribir <code>docker compose exec api ...</code> y es el nombre DNS dentro de la red. El largo (<code>lab11-api-solo-local</code>) es el que ves en <code>docker ps</code> y te dice qué es sin abrir nada. <b>Etiquetas en vez de comentarios:</b> un comentario solo existe en el archivo; una etiqueta viaja dentro de Docker y se puede filtrar, como hiciste con <code>--filter</code>.</p></div>
+<label class="done"><input type="checkbox" data-step="5"> Hecho y entendido</label>
+</article>
+<article class="step" id="p6">
+<div class="shead"><span class="num">6</span><h3>Entrar al client y mirar su mundo</h3></div>
+<div class="trio"><div><b>Qué hacemos</b><p>Abrimos una shell dentro del contenedor <code>client</code> y miramos sus interfaces, rutas, vecinos y DNS.</p></div><div><b>Por qué</b><p>Antes de diagnosticar nada hay que saber cómo es "normal". Ese es el punto de partida de cualquier diagnóstico.</p></div><div><b>Si no lo hiciéramos</b><p>Sin conocer el estado normal no puedes reconocer lo que está mal.</p></div></div>
+<div class="predict"><b>Antes de ejecutar, predice</b><p>¿Cuál de las líneas de <code>ip route</code> será el gateway? ¿Esperas que <code>ip neigh</code> esté llena o vacía?</p></div>
+<p>Esta es tu Terminal 1. La dejarás abierta durante todo el laboratorio.</p>
+<div class="code"><div class="cbar"><span class="where">WSL, carpeta laboratorios/lab-1-1 del repositorio</span><button class="cp" type="button">Copiar</button></div><pre><code>docker compose exec client bash</code></pre></div>
+<p>Ya dentro, ejecuta los cuatro comandos:</p>
+<div class="code"><div class="cbar"><span class="where">Terminal 1 (dentro del client)</span><button class="cp" type="button">Copiar</button></div><pre><code>ip -br addr
+ip route
+ip neigh
+cat /etc/resolv.conf</code></pre></div>
+<div class="obs"><b>Qué debes observar</b><p>La interfaz <code>eth0</code> tiene la IP 172.21.0.5. En <code>ip route</code> hay una línea que empieza por <code>default via 172.21.0.1</code>: esa es tu puerta de salida, el gateway. <code>ip neigh</code> es tu tabla ARP, y probablemente tenga pocas entradas porque este contenedor acaba de nacer. <code>resolv.conf</code> apunta a 127.0.0.11, el DNS interno de Docker.</p></div>
+<label class="done"><input type="checkbox" data-step="6"> Hecho y entendido</label>
+</article>
+<article class="step" id="p7">
+<div class="shead"><span class="num">7</span><h3>Ver la decisión: entrega directa o por el gateway</h3></div>
+<div class="trio"><div><b>Qué hacemos</b><p>Preguntamos al kernel qué haría para llegar a dos destinos distintos, sin enviar nada.</p></div><div><b>Por qué</b><p>Es exactamente la decisión que simulamos en clase, ahora hecha por tu sistema real.</p></div><div><b>Si no lo hiciéramos</b><p>Te quedarías con la teoría sin comprobar que el sistema real la sigue.</p></div></div>
+<div class="predict"><b>Antes de ejecutar, predice</b><p>¿Cuál de las dos respuestas incluirá la palabra <code>via</code>?</p></div>
+<div class="code"><div class="cbar"><span class="where">Terminal 1 (dentro del client)</span><button class="cp" type="button">Copiar</button></div><pre><code>ip route get 172.21.0.10
+ip route get 8.8.8.8</code></pre></div>
+<div class="obs"><b>Qué debes observar</b><p>Para 172.21.0.10 (misma red) la respuesta indica <code>dev eth0</code> sin <code>via</code>: entrega directa. Para 8.8.8.8 (fuera de la red) incluye <code>via 172.21.0.1</code>: se entrega al gateway.</p></div>
+<div class="alt"><b>Por qué esto y no otra cosa</b><p><code>ip route get</code> no envía ningún paquete, solo consulta la tabla. Herramientas como <code>traceroute</code> responden otra pregunta distinta (por dónde pasa el tráfico) y sí generan tráfico.</p></div>
+<label class="done"><input type="checkbox" data-step="7"> Hecho y entendido</label>
+</article>
+<article class="step" id="p8">
+<div class="shead"><span class="num">8</span><h3>Ver ARP en vivo</h3></div>
+<div class="trio"><div><b>Qué hacemos</b><p>Capturamos el tráfico ARP mientras tu máquina contacta por primera vez a otra.</p></div><div><b>Por qué</b><p>Verás con tus ojos la pregunta "¿quién tiene esta IP?" y su respuesta.</p></div><div><b>Si no lo hiciéramos</b><p>ARP seguiría siendo un concepto de dibujo, no algo que has visto pasar.</p></div></div>
+<div class="predict"><b>Antes de ejecutar, predice</b><p>¿Cuál será la MAC destino del primer paquete que sale? Pista: tu máquina todavía no la conoce.</p></div>
+<p>En la Terminal 2 arranca la captura. Se detendrá sola tras dos paquetes. Las opciones: <code>-n</code> no traduce IP a nombres, para que veas los datos crudos; <code>-e</code> muestra las direcciones MAC; <code>-i eth0</code> elige la interfaz; <code>-c 2</code> captura solo dos paquetes.</p>
+<div class="code"><div class="cbar"><span class="where">Terminal 2 (WSL, carpeta del laboratorio)</span><button class="cp" type="button">Copiar</button></div><pre><code>docker compose exec client tcpdump -n -e -i eth0 -c 2 arp</code></pre></div>
+<p>Mientras espera, en la Terminal 1 contacta a una máquina con la que aún no hayas hablado:</p>
+<div class="code"><div class="cbar"><span class="where">Terminal 1 (dentro del client)</span><button class="cp" type="button">Copiar</button></div><pre><code>ping -c 1 172.21.0.30
+ip neigh</code></pre></div>
+<div class="obs"><b>Qué debes observar</b><p>El primer paquete es una pregunta del tipo <code>who-has 172.21.0.30 tell 172.21.0.5</code>, enviada a la dirección de broadcast (<code>ff:ff:ff:ff:ff:ff</code>). El segundo es la respuesta <code>is-at</code> con la MAC del dueño. Después, <code>ip neigh</code> muestra la entrada nueva para 172.21.0.30. Si no aparece ninguna pregunta ARP, esa IP ya estaba en tu tabla: usa otra IP con la que no hayas hablado, como 172.21.0.10.</p></div>
+<div class="alt"><b>Por qué esto y no otra cosa</b><p><b>tcpdump y no Wireshark:</b> tcpdump está dentro del contenedor, ve exactamente la interfaz que nos interesa y funciona sin entorno gráfico. Wireshark desde Windows tendría que capturar en el puente de Docker, lo que complica el laboratorio.</p></div>
+<label class="done"><input type="checkbox" data-step="8"> Hecho y entendido</label>
+</article>
+<article class="step" id="p9">
+<div class="shead"><span class="num">9</span><h3>Comprobar que la MAC destino es la del router</h3></div>
+<div class="trio"><div><b>Qué hacemos</b><p>Enviamos un paquete a 8.8.8.8 y capturamos la trama para ver sus direcciones.</p></div><div><b>Por qué</b><p>Esta es la idea central de la lección 1.1. Aquí la compruebas en un paquete real.</p></div><div><b>Si no lo hiciéramos</b><p>Seguirías confiando en una frase que te dije, no en una evidencia tuya.</p></div></div>
+<div class="predict"><b>Antes de ejecutar, predice</b><p>La IP destino del paquete será 8.8.8.8. ¿A qué MAC crees que irá dirigida la trama: a la del dueño de 8.8.8.8 o a otra?</p></div>
+<div class="code"><div class="cbar"><span class="where">Terminal 2 (WSL, carpeta del laboratorio)</span><button class="cp" type="button">Copiar</button></div><pre><code>docker compose exec client tcpdump -n -e -i eth0 -c 2 icmp</code></pre></div>
+<p>Mientras espera, en la Terminal 1:</p>
+<div class="code"><div class="cbar"><span class="where">Terminal 1 (dentro del client)</span><button class="cp" type="button">Copiar</button></div><pre><code>ping -c 2 -W 2 8.8.8.8
+ip neigh show 172.21.0.1</code></pre></div>
+<div class="obs"><b>Qué debes observar</b><p>En cada línea de la captura aparecen dos MAC, una de origen y una de destino, y después la parte IP, con origen 172.21.0.5 y destino 8.8.8.8. Compara la MAC destino de la captura con la MAC que <code>ip neigh show 172.21.0.1</code> asigna al gateway. Deben ser la misma. Es decir: la IP destino es la del servidor lejano y la MAC destino es la del router. Da igual si el ping recibe respuesta o no: lo que nos interesa es el paquete que sale.</p></div>
+<label class="done"><input type="checkbox" data-step="9"> Hecho y entendido</label>
+</article>
+<article class="step" id="p10">
+<div class="shead"><span class="num">10</span><h3>Escalón 1: el nombre se resuelve, o no</h3></div>
+<div class="trio"><div><b>Qué hacemos</b><p>Probamos un nombre que existe y uno que no.</p></div><div><b>Por qué</b><p>Es el primer escalón de la escalera. Si falla, no hay IP a la que hablar.</p></div><div><b>Si no lo hiciéramos</b><p>No distinguirías un problema de DNS de uno de red.</p></div></div>
+<div class="predict"><b>Antes de ejecutar, predice</b><p>¿Qué IP debe devolver <code>dig +short web</code>? ¿En qué escalón se detendrá el último comando?</p></div>
+<div class="code"><div class="cbar"><span class="where">Terminal 1 (dentro del client)</span><button class="cp" type="button">Copiar</button></div><pre><code>dig +short web
+curl -sS http://web/
+curl -sS -m 5 http://inexistente.lab/
+echo "codigo de salida: $?"</code></pre></div>
+<div class="obs"><b>Qué debes observar</b><p><code>dig</code> devuelve 172.21.0.10. El primer <code>curl</code> imprime una pequeña página de laboratorio. El segundo termina con <code>Could not resolve host</code> y el código de salida 6. No salió ni un paquete hacia el servidor: la falla es de DNS.</p></div>
+<div class="alt"><b>Por qué esto y no otra cosa</b><p>Docker resuelve los nombres de los servicios con su DNS interno (el 127.0.0.11 que viste), pero solo en redes definidas por el usuario.</p></div>
+<label class="done"><input type="checkbox" data-step="10"> Hecho y entendido</label>
+</article>
+<article class="step" id="p11">
+<div class="shead"><span class="num">11</span><h3>Escalón 2: no hay camino</h3></div>
+<div class="trio"><div><b>Qué hacemos</b><p>Intentamos conectar con 172.21.0.99, una IP que pertenece a tu red pero a ninguna máquina.</p></div><div><b>Por qué</b><p>Muestra un matiz importante: la ruta existe (dice "entrega directa"), pero el vecino no existe.</p></div><div><b>Si no lo hiciéramos</b><p>Pensarías que "no route to host" siempre significa que falta una ruta, y no es así.</p></div></div>
+<div class="predict"><b>Antes de ejecutar, predice</b><p>Según la tabla de rutas, 172.21.0.99 está en tu red. ¿Qué crees que ocurre cuando tu máquina pregunta por ARP quién tiene esa IP?</p></div>
+<div class="code"><div class="cbar"><span class="where">Terminal 2 (WSL, carpeta del laboratorio)</span><button class="cp" type="button">Copiar</button></div><pre><code>docker compose exec client timeout 8 tcpdump -n -i eth0 arp</code></pre></div>
+<p>Mientras captura, en la Terminal 1:</p>
+<div class="code"><div class="cbar"><span class="where">Terminal 1 (dentro del client)</span><button class="cp" type="button">Copiar</button></div><pre><code>nc -vz -w 10 172.21.0.99 80
+ip neigh show 172.21.0.99</code></pre></div>
+<div class="obs"><b>Qué debes observar</b><p>Tras unos segundos, <code>nc</code> imprime <code>No route to host</code>. La captura muestra varias preguntas <code>who-has 172.21.0.99</code> sin ninguna respuesta. En <code>ip neigh</code>, la entrada queda en estado <code>FAILED</code> o <code>INCOMPLETE</code>. Sin MAC del vecino no se puede armar la trama. Es un fallo de la capa de enlace.</p></div>
+<label class="done"><input type="checkbox" data-step="11"> Hecho y entendido</label>
+</article>
+<article class="step" id="p12">
+<div class="shead"><span class="num">12</span><h3>Escalón 4, silencio: el timeout de fw</h3></div>
+<div class="trio"><div><b>Qué hacemos</b><p>Conectamos al puerto 9090 de <code>fw</code>, que está vivo pero tiene un firewall que descarta los paquetes.</p></div><div><b>Por qué</b><p>Es el caso más difícil de diagnosticar, porque no recibes ninguna respuesta que te guíe.</p></div><div><b>Si no lo hiciéramos</b><p>Sin comparar tres evidencias (la captura, el servicio y el firewall) no sabrías si el problema es la aplicación o la red.</p></div></div>
+<div class="predict"><b>Antes de ejecutar, predice</b><p>¿Esperas que <code>nc</code> te responda al instante o tarde? ¿Aparecerá algún paquete de vuelta en la captura?</p></div>
+<div class="code"><div class="cbar"><span class="where">Terminal 2 (WSL, carpeta del laboratorio)</span><button class="cp" type="button">Copiar</button></div><pre><code>docker compose exec client timeout 8 tcpdump -n -i eth0 tcp port 9090</code></pre></div>
+<p>Mientras captura, en la Terminal 1:</p>
+<div class="code"><div class="cbar"><span class="where">Terminal 1 (dentro del client)</span><button class="cp" type="button">Copiar</button></div><pre><code>nc -vz -w 4 172.21.0.30 9090</code></pre></div>
+<p>Ahora mira el otro lado, dentro del contenedor <code>fw</code>:</p>
+<div class="code"><div class="cbar"><span class="where">Terminal 2 (WSL, carpeta del laboratorio)</span><button class="cp" type="button">Copiar</button></div><pre><code>docker compose exec fw ss -ltn
+docker compose exec fw iptables -L INPUT -n -v</code></pre></div>
+<p>Si la lista de reglas sale vacía, la regla pudo instalarse con el modo antiguo de iptables. Pruébalo así:</p>
+<div class="code"><div class="cbar"><span class="where">Terminal 2 (WSL, carpeta del laboratorio)</span><button class="cp" type="button">Copiar</button></div><pre><code>docker compose exec fw iptables-legacy -L INPUT -n -v</code></pre></div>
+<div class="obs"><b>Qué debes observar</b><p><code>nc</code> espera cuatro segundos y termina con <code>timed out</code>. La captura muestra varios paquetes <code>[S]</code> (peticiones de conexión) de tu client, repetidos con pausas cada vez más largas, y ninguna respuesta. En <code>fw</code>, <code>ss</code> muestra el puerto 9090 en escucha: el servicio está vivo. La lista de iptables muestra una regla <code>DROP</code> para el puerto 9090 con un contador de paquetes que crece en cada intento.</p><p>Conclusión: el servicio está sano, pero un firewall descarta los paquetes antes de que lleguen.</p></div>
+<div class="alt"><b>Por qué esto y no otra cosa</b><p><b>DROP y no REJECT:</b> con REJECT, el firewall respondería activamente y recibirías un error inmediato. Con DROP no responde nada y se produce un timeout. En producción se prefiere DROP para no dar pistas a un atacante, y por eso los timeouts son tan comunes en problemas de firewall.</p></div>
+<label class="done"><input type="checkbox" data-step="12"> Hecho y entendido</label>
+</article>
+<article class="step" id="p13">
+<div class="shead"><span class="num">13</span><h3>Escalón 4, rechazo: el refused de api</h3></div>
+<div class="trio"><div><b>Qué hacemos</b><p>Conectamos al puerto 8080 de <code>api</code>, que escucha solo en localhost.</p></div><div><b>Por qué</b><p>Es el caso de diagnóstico más frecuente en el trabajo: un servicio levantado que no es accesible desde fuera.</p></div><div><b>Si no lo hiciéramos</b><p>No aprenderías a distinguir un rechazo de un silencio.</p></div></div>
+<div class="predict"><b>Antes de ejecutar, predice</b><p>Después del primer paquete <code>[S]</code> de tu client, ¿qué esperas que conteste la máquina api?</p></div>
+<div class="code"><div class="cbar"><span class="where">Terminal 2 (WSL, carpeta del laboratorio)</span><button class="cp" type="button">Copiar</button></div><pre><code>docker compose exec client timeout 8 tcpdump -n -i eth0 tcp port 8080</code></pre></div>
+<p>Mientras captura, en la Terminal 1:</p>
+<div class="code"><div class="cbar"><span class="where">Terminal 1 (dentro del client)</span><button class="cp" type="button">Copiar</button></div><pre><code>nc -vz -w 4 172.21.0.20 8080
+curl -sS -m 5 http://172.21.0.20:8080/
+echo "codigo de salida: $?"</code></pre></div>
+<p>Ahora diagnostica dentro de <code>api</code>:</p>
+<div class="code"><div class="cbar"><span class="where">Terminal 2 (WSL, carpeta del laboratorio)</span><button class="cp" type="button">Copiar</button></div><pre><code>docker compose exec api ss -ltnp
+docker compose exec api curl -sS http://127.0.0.1:8080/</code></pre></div>
+<div class="obs"><b>Qué debes observar</b><p><code>nc</code> responde al instante con <code>Connection refused</code>. <code>curl</code> termina con el código de salida 7; el texto exacto del error cambia según la versión de curl, por eso confiamos en el código y en <code>nc</code>. La captura muestra un <code>[S]</code> seguido de un <code>[R.]</code> (reinicio de la conexión) que viene de 172.21.0.20: la máquina respondió activamente que no. <code>ss</code> muestra que el puerto 8080 escucha en <code>127.0.0.1</code> y no en <code>0.0.0.0</code>. Desde dentro de <code>api</code>, <code>curl</code> sí funciona, así que el servicio está sano y el problema es dónde escucha.</p></div>
+<label class="done"><input type="checkbox" data-step="13"> Hecho y entendido</label>
+</article>
+<article class="step" id="p14">
+<div class="shead"><span class="num">14</span><h3>Arreglar la api</h3></div>
+<div class="trio"><div><b>Qué hacemos</b><p>Cambiamos la dirección en la que escucha, de 127.0.0.1 a 0.0.0.0, y recreamos solo ese contenedor.</p></div><div><b>Por qué</b><p><code>127.0.0.1</code> significa "solo yo, desde dentro". <code>0.0.0.0</code> significa "todas mis interfaces", incluida la que está en la red del laboratorio.</p></div><div><b>Si no lo hiciéramos</b><p>El servicio seguiría inaccesible desde otros contenedores.</p></div></div>
+<p>Abre <code>compose.yaml</code> en VS Code, busca el servicio <code>api</code> y cambia <code>"127.0.0.1"</code> por <code>"0.0.0.0"</code> en su comando. Si prefieres hacerlo desde la terminal:</p>
+<div class="code"><div class="cbar"><span class="where">WSL, carpeta laboratorios/lab-1-1 del repositorio</span><button class="cp" type="button">Copiar</button></div><pre><code>sed -i '/api:/,/networks:/ s/"127.0.0.1"/"0.0.0.0"/' compose.yaml
+grep -n -- '--bind' compose.yaml</code></pre></div>
+<p>Recrea solo la api y repite la prueba:</p>
+<div class="code"><div class="cbar"><span class="where">WSL, carpeta laboratorios/lab-1-1 del repositorio</span><button class="cp" type="button">Copiar</button></div><pre><code>docker compose up -d api</code></pre></div>
+<div class="code"><div class="cbar"><span class="where">Terminal 1 (dentro del client)</span><button class="cp" type="button">Copiar</button></div><pre><code>nc -vz -w 4 172.21.0.20 8080
+curl -sS -m 5 http://172.21.0.20:8080/</code></pre></div>
+<div class="obs"><b>Qué debes observar</b><p><code>docker compose up -d api</code> indica que recreó el contenedor <code>api</code>, sin tocar los demás. Ahora <code>nc</code> dice <code>succeeded</code> y <code>curl</code> devuelve la página del laboratorio.</p></div>
+<div class="alt"><b>Por qué esto y no otra cosa</b><p><b>0.0.0.0 o una IP concreta:</b> ambas funcionan. En producción conviene limitar el servicio a la interfaz necesaria, porque 0.0.0.0 lo expone en todas las redes del servidor. Aquí la red es aislada, así que no hay riesgo. <b>Publicar puertos con <code>ports:</code> no lo habría arreglado:</b> publicar mapea un puerto del host al contenedor, pero el servicio seguía sin escuchar fuera de su propia loopback.</p></div>
+<label class="done"><input type="checkbox" data-step="14"> Hecho y entendido</label>
+</article>
+<article class="step" id="p15">
+<div class="shead"><span class="num">15</span><h3>Escalón 5: la aplicación responde</h3></div>
+<div class="trio"><div><b>Qué hacemos</b><p>Pedimos a <code>web</code> una página que no existe.</p></div><div><b>Por qué</b><p>Cierra la escalera: aquí la red funciona de punta a punta y es la aplicación la que contesta con un error.</p></div><div><b>Si no lo hiciéramos</b><p>Podrías confundir un error de aplicación con un problema de red.</p></div></div>
+<div class="predict"><b>Antes de ejecutar, predice</b><p>Los cuatro primeros escalones funcionan. ¿Quién genera el error?</p></div>
+<div class="code"><div class="cbar"><span class="where">Terminal 1 (dentro del client)</span><button class="cp" type="button">Copiar</button></div><pre><code>curl -sS -i http://web/noexiste | head -n 1</code></pre></div>
+<div class="obs"><b>Qué debes observar</b><p>La primera línea de la respuesta contiene el código 404. La red funcionó de punta a punta y la aplicación fue la que respondió que no encuentra esa página. Aquí se miran los logs de la aplicación, no la red.</p></div>
+<label class="done"><input type="checkbox" data-step="15"> Hecho y entendido</label>
+</article>
+<article class="step" id="p16">
+<div class="shead"><span class="num">16</span><h3>Verificación automática</h3></div>
+<div class="trio"><div><b>Qué hacemos</b><p>Ejecutamos un script que repite todas las pruebas anteriores y comprueba los resultados.</p></div><div><b>Por qué</b><p>Un laboratorio solo está terminado cuando se puede verificar sin depender de la memoria de quien lo hizo. Este es el mismo principio que usarás luego en pipelines.</p></div><div><b>Si no lo hiciéramos</b><p>Tendrías que revisar los resultados a ojo cada vez.</p></div></div>
+<p>Sal de la shell del client con <code>exit</code> (o usa otra terminal) y, desde la carpeta del laboratorio, ejecuta:</p>
+<div class="code"><div class="cbar"><span class="where">WSL, carpeta laboratorios/lab-1-1 del repositorio</span><button class="cp" type="button">Copiar</button></div><pre><code>bash verify.sh --fixed</code></pre></div>
+<p>Opcional: para ver el estado inicial otra vez, devuelve el <code>0.0.0.0</code> a <code>127.0.0.1</code> en el compose, ejecuta <code>docker compose up -d api</code> y luego <code>bash verify.sh</code> sin parámetros.</p>
+<div class="obs"><b>Qué debes observar</b><p>Cada prueba muestra <code>[OK]</code> o <code>[FALLO]</code> y, si falla, qué esperaba y qué obtuvo. Al final, un resumen. El script termina con éxito solo si todo pasó.</p></div>
+<label class="done"><input type="checkbox" data-step="16"> Hecho y entendido</label>
+</article>
+</section>
+
+<section class="sec" id="pruebas">
+  <span class="tag">9, 10 y 12. Validación, pruebas y resultado esperado</span>
+  <h2>Cómo saber que terminaste bien</h2>
+  <div class="tw"><table>
+    <tr><th>Cuándo</th><th>Comando</th><th>Resultado esperado</th></tr>
+    <tr><td>Estado inicial</td><td><code>bash verify.sh</code></td><td>7 pruebas, todas <code>[OK]</code></td></tr>
+    <tr><td>Después de arreglar api</td><td><code>bash verify.sh --fixed</code></td><td>8 pruebas, todas <code>[OK]</code></td></tr>
+  </table></div>
+  <p>Además, deberías haber visto con tus propios ojos cuatro cosas: la pareja pregunta y respuesta de ARP, la MAC destino del gateway en un paquete dirigido a 8.8.8.8, la diferencia entre un <code>[R.]</code> inmediato (refused) y varios <code>[S]</code> sin respuesta (timeout), y la regla DROP con su contador de paquetes.</p>
+  <p>Si el verificador falla en alguna prueba, no es motivo para frustrarte: te dice qué esperaba y qué obtuvo. Usa esa diferencia como punto de partida del diagnóstico.</p>
+</section>
+
+<section class="sec" id="errores">
+  <span class="tag">11. Diagnóstico de errores</span>
+  <h2>Si algo no sale</h2>
+  <details><summary>Cannot connect to the Docker daemon</summary><div class="ans"><p>El servicio de Docker no está en marcha. En WSL sin systemd:</p>
+  <div class="code"><div class="cbar"><span class="where">WSL</span><button class="cp" type="button">Copiar</button></div><pre><code>sudo service docker start</code></pre></div>
+  <p>Con systemd, usa <code>sudo systemctl start docker</code>. Luego repite <code>docker ps</code>.</p></div></details>
+  <details><summary>permission denied ... /var/run/docker.sock</summary><div class="ans"><p>Tu usuario no pertenece al grupo docker. Añádelo y abre una terminal nueva:</p>
+  <div class="code"><div class="cbar"><span class="where">WSL</span><button class="cp" type="button">Copiar</button></div><pre><code>sudo usermod -aG docker $USER</code></pre></div></div></details>
+  <details><summary>Pool overlaps with other one on this address space</summary><div class="ans"><p>La red 172.21.0.0/24 choca con otra red tuya. Mira qué redes ya usas:</p>
+  <div class="code"><div class="cbar"><span class="where">WSL</span><button class="cp" type="button">Copiar</button></div><pre><code>docker network inspect $(docker network ls -q) --format '{{.Name}} {{range .IPAM.Config}}{{.Subnet}} {{end}}'</code></pre></div>
+  <p>Si hay choque, elige otro rango libre (por ejemplo 172.31.0.0/24) y cámbialo en todo el laboratorio: la subred y las cuatro IP en <code>compose.yaml</code>, y las IP de <code>verify.sh</code>. Las pruebas del laboratorio dan el mismo resultado con otro rango.</p></div></details>
+  <details><summary>El build falla con "Temporary failure resolving deb.debian.org"</summary><div class="ans"><p>El contenedor de construcción no tiene DNS. Comprueba que WSL tiene internet (<code>curl -sI https://deb.debian.org</code>). Si WSL sí tiene, puede ser un problema del DNS de Docker. En ese caso cuéntame la salida completa del error y lo resolvemos.</p></div></details>
+  <details><summary>El servicio fw termina con ERROR de firewall</summary><div class="ans"><p>Mira por qué:</p>
+  <div class="code"><div class="cbar"><span class="where">WSL, carpeta del laboratorio</span><button class="cp" type="button">Copiar</button></div><pre><code>docker compose logs fw</code></pre></div>
+  <p>Significa que el kernel o los permisos del contenedor no dejan instalar la regla. No sigas a ciegas: pégame esa salida y te preparo una alternativa para producir el timeout de otra forma. El resto del laboratorio sigue funcionando.</p></div></details>
+  <details><summary>tcpdump: no suitable device found, o permission denied</summary><div class="ans"><p>La interfaz tiene otro nombre. Dentro del client ejecuta <code>ip -br addr</code> y usa el nombre que tenga la IP 172.21.0.5 en lugar de <code>eth0</code>.</p></div></details>
+  <details><summary>La captura de ARP no muestra nada</summary><div class="ans"><p>Esa IP ya estaba en tu tabla ARP. Mira <code>ip neigh</code> y elige una IP que no aparezca, o espera a que la entrada caduque.</p></div></details>
+  <details><summary>El texto del error de curl es diferente al que describe la guía</summary><div class="ans"><p>Es normal. El texto de curl cambia entre versiones. Lo que no cambia es el código de salida (7 para no poder conectar, 28 para timeout, 6 para no poder resolver el nombre) y el mensaje de <code>nc</code>, por eso los usamos para las comprobaciones.</p></div></details>
+  <details><summary>verify.sh dice que un servicio no está en ejecución</summary><div class="ans"><p>Ejecútalo desde la carpeta del laboratorio, con el entorno levantado: <code>docker compose ps</code> debe mostrar los servicios en ejecución.</p></div></details>
+</section>
+
+<section class="sec" id="limpieza">
+  <span class="tag">13. Limpieza del entorno</span>
+  <h2>Cuando termines</h2>
+  <p>Estos comandos solo tocan lo que creó este laboratorio. Eliminan los contenedores, la red <code>lab11-red</code> y la imagen <code>lab11-herramientas</code>. No afectan a ningún otro proyecto tuyo.</p>
+  <div class="code"><div class="cbar"><span class="where">WSL, carpeta del laboratorio</span><button class="cp" type="button">Copiar</button></div><pre><code>docker compose down --rmi local --remove-orphans
+docker ps -a
+docker network ls</code></pre></div>
+  <p>Los dos últimos comandos comprueban que ya no queda nada del laboratorio. Los archivos de la carpeta <code>lab-1-1</code> los conservas: son tu evidencia para GitHub.</p>
+  <div class="warnbox"><b>Evita</b> <code>docker system prune -a</code> para limpiar este laboratorio. Borra todas las imágenes y contenedores sin usar de todos tus proyectos, no solo de este.</div>
+</section>
+
+<section class="sec" id="ejercicio">
+  <span class="tag">Ejercicio individual</span>
+  <h2>Tu entrega</h2>
+  <p>Cuando termines, pégame las salidas reales de tu pantalla. No las resumas ni las reescribas. Tu entrega tiene dos partes.</p>
+  <h3>Parte 1. Tabla de evidencia</h3>
+  <p>Para cada una de estas cinco pruebas, escribe una fila: web con ruta inexistente, <code>inexistente.lab</code>, 172.21.0.99, fw:9090 y api:8080 (antes del arreglo).</p>
+  <div class="tw"><table>
+    <tr><th>Columna</th><th>Qué debe contener</th></tr>
+    <tr><td>Comando</td><td>El comando exacto que usaste</td></tr>
+    <tr><td>Mensaje</td><td>Lo que apareció en pantalla, copiado</td></tr>
+    <tr><td>Escalón y capa</td><td>En qué escalón de la escalera y capa del modelo se rompe</td></tr>
+    <tr><td>Evidencia</td><td>La captura o salida que lo confirma (tcpdump, ss, iptables)</td></tr>
+    <tr><td>Causa</td><td>Qué ocurre realmente</td></tr>
+    <tr><td>Primera acción</td><td>Qué harías primero si esto pasara en producción</td></tr>
+  </table></div>
+  <h3>Parte 2. Cuatro preguntas</h3>
+  <p>Respóndelas con tus palabras y apoyándote en tus capturas:</p>
+  <ul>
+    <li>En tu captura del paquete a 8.8.8.8, ¿qué MAC destino y qué IP destino viste? ¿Por qué no coinciden con el mismo dispositivo?</li>
+    <li>¿Por qué un <code>refused</code> es una mejor noticia para quien diagnostica que un <code>timed out</code>?</li>
+    <li>Dentro de <code>api</code>, el servicio responde por 127.0.0.1, pero desde <code>client</code> no. ¿Qué significa esa diferencia?</li>
+    <li>El mensaje "No route to host" parece decir que falta una ruta, y en la prueba de 172.21.0.99 la ruta sí existía. ¿Qué es lo que realmente falló?</li>
+  </ul>
+  <h3>Criterios de aprobación</h3>
+  <ul>
+    <li>Las cinco filas de la tabla tienen evidencia real, no solo la teoría.</li>
+    <li>Identificas correctamente el escalón y la capa en las cinco pruebas.</li>
+    <li>Las cuatro preguntas se responden con razonamiento propio.</li>
+    <li>El verificador pasa en ambos estados.</li>
+  </ul>
+  <p>Si algo falla, te daré pistas progresivas, no la solución. Tras aprobar este laboratorio, cerramos la lección 1.1 y pasamos a un incidente nuevo con una falla escondida que tendrás que encontrar tú solo.</p>
+</section>
+
+<footer>Laboratorio 1.1. Actualizado el 25 de noviembre de 2026. Las salidas descritas en "Qué debes observar" explican qué debería ocurrir; no son capturas reales de tu máquina.</footer>
+</div>
+
+<script>
+(function(){
+  var N=16;
+  var KEY="lab11-progress";
+  var saved={};
+  try{saved=JSON.parse(localStorage.getItem(KEY)||"{}");}catch(e){saved={};}
+  var boxes=document.querySelectorAll("input[data-step]");
+  function count(){
+    var c=0;boxes.forEach(function(b){if(b.checked)c++;});
+    document.getElementById("prog").textContent=c+" de "+N+" pasos";
+  }
+  boxes.forEach(function(b){
+    var k=b.getAttribute("data-step");
+    if(saved[k])b.checked=true;
+    b.addEventListener("change",function(){
+      saved[k]=b.checked;
+      try{localStorage.setItem(KEY,JSON.stringify(saved));}catch(e){}
+      count();
+    });
+  });
+  count();
+  document.querySelectorAll("button.cp").forEach(function(btn){
+    btn.addEventListener("click",function(){
+      var text=btn.closest(".code").querySelector("code").textContent;
+      function done(ok){var o=btn.textContent;btn.textContent=ok?"Copiado":"Selecciona y copia";setTimeout(function(){btn.textContent="Copiar";},1500);}
+      try{
+        navigator.clipboard.writeText(text).then(function(){done(true);},function(){fallback();});
+      }catch(e){fallback();}
+      function fallback(){
+        try{
+          var r=document.createRange();r.selectNodeContents(btn.closest(".code").querySelector("code"));
+          var s=window.getSelection();s.removeAllRanges();s.addRange(r);
+        }catch(e){}
+        done(false);
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
