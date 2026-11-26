@@ -23,4 +23,11 @@ Diario de sesiones, de la más antigua a la más reciente. Aquí también quedan
 - Aprendí a listar los contenedores de un laboratorio con un filtro por etiqueta, y la diferencia entre `docker ps` y `docker ps -a`.
 - Entendí que cada contenedor tiene nombre de servicio (`web`) y nombre de contenedor (`lab11-web-sano`).
 - Acerté la predicción y resolví solo el caso de apagar y encender la API.
-- Siguiente paso: micro-lección 2, "La dirección IP".
+
+## 2026-11-26: micro-lección 2, la dirección IP
+
+- Repaso de la micro-lección 1: tres de tres.
+- Aprendí a ver las direcciones de una máquina con `ip -4 -br addr` y a distinguir `eth0` (la puerta a la red) de `lo` (127.0.0.1, la propia máquina).
+- Acerté la predicción: `127.0.0.1` existe igual en todas las máquinas, por eso no sirve para identificar a ninguna.
+- En el caso solo usé `docker exec` con el nombre de contenedor sin que me lo pidieran.
+- Siguiente paso: micro-lección 3, "El puerto".
